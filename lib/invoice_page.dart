@@ -101,6 +101,11 @@ class _InvoicePageState extends State<InvoicePage> {
 
   // Total amount from all items
   double get _amount => _items.fold(0.0, (sum, it) => sum + it.amount);
+  // Taxes (flat 18% = CGST 9% + SGST 9%)
+  double get _subTotal => _amount;
+  double get _cgst => _subTotal * 0.09;
+  double get _sgst => _subTotal * 0.09;
+  double get _grandTotal => _subTotal + _cgst + _sgst;
 
   Future<Uint8List> _generatePdfBytes() async {
     // Load multiple font weights (Roboto supports 100–900) for manual weight control
@@ -159,18 +164,35 @@ class _InvoicePageState extends State<InvoicePage> {
     );
 
     final itemsRows = <List<String>>[
-      ['', 'Item', 'Qty', 'Rate', 'Amount'],
+      [
+        '',
+        'Item',
+        'GST Rate',
+        'Qty',
+        'Rate',
+        'Amount',
+        'CGST',
+        'SGST',
+        'Total',
+      ],
       ...List.generate(_items.length, (i) {
         final it = _items[i];
         final qty = it.qty % 1 == 0
             ? it.qty.toStringAsFixed(0)
             : it.qty.toString();
+        final cgst = it.amount * 0.09;
+        final sgst = it.amount * 0.09;
+        final total = it.amount + cgst + sgst;
         return [
           '${i + 1}',
           it.name,
+          '18%',
           qty,
           formatCurrency.format(it.rate),
           formatCurrency.format(it.amount),
+          formatCurrency.format(cgst),
+          formatCurrency.format(sgst),
+          formatCurrency.format(total),
         ];
       }),
     ];
@@ -417,11 +439,15 @@ class _InvoicePageState extends State<InvoicePage> {
             ),
             data: itemsRows,
             columnWidths: {
-              0: const pw.FixedColumnWidth(36),
-              1: const pw.FlexColumnWidth(6),
+              0: const pw.FixedColumnWidth(28),
+              1: const pw.FlexColumnWidth(5),
               2: const pw.FlexColumnWidth(2),
-              3: const pw.FlexColumnWidth(3),
+              3: const pw.FlexColumnWidth(2),
               4: const pw.FlexColumnWidth(3),
+              5: const pw.FlexColumnWidth(3),
+              6: const pw.FlexColumnWidth(3),
+              7: const pw.FlexColumnWidth(3),
+              8: const pw.FlexColumnWidth(3),
             },
           ),
           pw.SizedBox(height: 8),
@@ -433,7 +459,7 @@ class _InvoicePageState extends State<InvoicePage> {
               pw.Expanded(
                 child: _items.isNotEmpty
                     ? pw.Text(
-                        'Total (in words): ${_inWords(_amount.round())} ONLY',
+                        'Total (in words): ${_inWords(_grandTotal.round())} ONLY',
                         style: pw.TextStyle(
                           font: fontForWeight(600),
                           color: pdf.PdfColors.black,
@@ -474,7 +500,7 @@ class _InvoicePageState extends State<InvoicePage> {
                     ),
                     padding: const pw.EdgeInsets.symmetric(vertical: 6),
                     child: pw.Text(
-                      formatCurrency.format(_amount),
+                      formatCurrency.format(_grandTotal),
                       style: pw.TextStyle(font: fontForWeight(600)),
                     ),
                   ),
@@ -1413,7 +1439,7 @@ class _InvoicePageState extends State<InvoicePage> {
                           padding: const EdgeInsets.symmetric(vertical: 6.0),
                           child: Row(
                             children: [
-                              Expanded(flex: 6, child: Text(_items[i].name)),
+                              Expanded(flex: 5, child: Text(_items[i].name)),
                               Expanded(
                                 flex: 2,
                                 child: Text(
@@ -1857,9 +1883,20 @@ class _InvoicePageState extends State<InvoicePage> {
                       ),
                     ),
                     Expanded(
-                      flex: 6,
+                      flex: 5,
                       child: Text(
                         'Item',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'GST Rate',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -1892,6 +1929,39 @@ class _InvoicePageState extends State<InvoicePage> {
                       flex: 3,
                       child: Text(
                         'Amount',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'CGST',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'SGST',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'Total',
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           color: Colors.white,
@@ -1944,6 +2014,10 @@ class _InvoicePageState extends State<InvoicePage> {
                             ),
                             Expanded(
                               flex: 2,
+                              child: Text('18%', textAlign: TextAlign.center),
+                            ),
+                            Expanded(
+                              flex: 2,
                               child: Text(
                                 _items[i].qty % 1 == 0
                                     ? _items[i].qty.toStringAsFixed(0)
@@ -1965,6 +2039,27 @@ class _InvoicePageState extends State<InvoicePage> {
                                 textAlign: TextAlign.right,
                               ),
                             ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                _inCurrency.format(_items[i].amount * 0.09),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                _inCurrency.format(_items[i].amount * 0.09),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                _inCurrency.format(_items[i].amount * 1.18),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1975,7 +2070,7 @@ class _InvoicePageState extends State<InvoicePage> {
               const SizedBox(height: 8),
               if (_items.isNotEmpty)
                 Text(
-                  'Total (in words): ${_inWords(_amount.round())} ONLY',
+                  'Total (in words): ${_inWords(_grandTotal.round())} ONLY',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
@@ -2021,7 +2116,7 @@ class _InvoicePageState extends State<InvoicePage> {
                                   ),
                                 ),
                                 child: Text(
-                                  _inCurrency.format(_amount),
+                                  _inCurrency.format(_grandTotal),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                   ),
