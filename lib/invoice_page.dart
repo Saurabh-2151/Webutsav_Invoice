@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart' as pdf;
 import 'package:printing/printing.dart' as printing;
 import 'package:file_saver/file_saver.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class InvoicePage extends StatefulWidget {
   const InvoicePage({super.key});
@@ -45,6 +46,53 @@ class _InvoicePageState extends State<InvoicePage> {
   final TextEditingController _upiId = TextEditingController();
   // Terms & Conditions (user-provided)
   final TextEditingController _terms = TextEditingController();
+
+  // SharedPreferences keys for persistence (only requested sections)
+  static const String _kBilledByName = 'billed_by_name';
+  static const String _kBilledByAddress = 'billed_by_address';
+  static const String _kBilledByEmail = 'billed_by_email';
+  static const String _kBilledByGstin = 'billed_by_gstin';
+  static const String _kBilledByPan = 'billed_by_pan';
+
+  static const String _kAccountName = 'bank_account_name';
+  static const String _kAccountNumber = 'bank_account_number';
+  static const String _kIfsc = 'bank_ifsc';
+  static const String _kAccountType = 'bank_account_type';
+  static const String _kBank = 'bank_name';
+  static const String _kUpiId = 'upi_id';
+
+  static const String _kTerms = 'invoice_terms';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPersistedFields();
+  }
+
+  Future<void> _loadPersistedFields() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Billed By
+    _billedByName.text = prefs.getString(_kBilledByName) ?? '';
+    _billedByAddress.text = prefs.getString(_kBilledByAddress) ?? '';
+    _billedByEmail.text = prefs.getString(_kBilledByEmail) ?? '';
+    _gstin.text = prefs.getString(_kBilledByGstin) ?? '';
+    _pan.text = prefs.getString(_kBilledByPan) ?? '';
+    // Bank/UPI
+    _accountName.text = prefs.getString(_kAccountName) ?? '';
+    _accountNumber.text = prefs.getString(_kAccountNumber) ?? '';
+    _ifsc.text = prefs.getString(_kIfsc) ?? '';
+    _accountType.text = prefs.getString(_kAccountType) ?? '';
+    _bank.text = prefs.getString(_kBank) ?? '';
+    _upiId.text = prefs.getString(_kUpiId) ?? '';
+    // Terms
+    _terms.text = prefs.getString(_kTerms) ?? '';
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _saveField(String key, String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
 
   // Items list
   final List<_InvoiceItem> _items = [];
@@ -662,7 +710,7 @@ class _InvoicePageState extends State<InvoicePage> {
           : _invoiceNo.text.trim();
 
       await FileSaver.instance.saveFile(
-        name: 'Invoice-$namePart',
+        name: 'Webutsav_Invoice-$namePart',
         bytes: bytes,
         ext: 'pdf',
         mimeType: MimeType.pdf,
@@ -1151,14 +1199,20 @@ class _InvoicePageState extends State<InvoicePage> {
                 TextFormField(
                   controller: _billedByName,
                   decoration: deco('Name'),
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) {
+                    _saveField(_kBilledByName, _billedByName.text);
+                    setState(() {});
+                  },
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _billedByAddress,
                   decoration: deco('Address'),
                   maxLines: 2,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) {
+                    _saveField(_kBilledByAddress, _billedByAddress.text);
+                    setState(() {});
+                  },
                 ),
                 const SizedBox(height: 8),
                 Builder(
@@ -1177,7 +1231,10 @@ class _InvoicePageState extends State<InvoicePage> {
                           child: TextFormField(
                             controller: _gstin,
                             decoration: deco('GSTIN'),
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) {
+                              _saveField(_kBilledByGstin, _gstin.text);
+                              setState(() {});
+                            },
                           ),
                         ),
                         ResponsiveRowColumnItem(
@@ -1185,7 +1242,10 @@ class _InvoicePageState extends State<InvoicePage> {
                           child: TextFormField(
                             controller: _pan,
                             decoration: deco('PAN'),
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) {
+                              _saveField(_kBilledByPan, _pan.text);
+                              setState(() {});
+                            },
                           ),
                         ),
                         ResponsiveRowColumnItem(
@@ -1194,7 +1254,10 @@ class _InvoicePageState extends State<InvoicePage> {
                             controller: _billedByEmail,
                             decoration: deco('Email'),
                             keyboardType: TextInputType.emailAddress,
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) {
+                              _saveField(_kBilledByEmail, _billedByEmail.text);
+                              setState(() {});
+                            },
                           ),
                         ),
                       ],
@@ -1449,7 +1512,10 @@ class _InvoicePageState extends State<InvoicePage> {
                     TextFormField(
                       controller: _accountName,
                       decoration: deco('Account Name'),
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) {
+                        _saveField(_kAccountName, _accountName.text);
+                        setState(() {});
+                      },
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -1458,7 +1524,10 @@ class _InvoicePageState extends State<InvoicePage> {
                           child: TextFormField(
                             controller: _accountNumber,
                             decoration: deco('Account Number'),
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) {
+                              _saveField(_kAccountNumber, _accountNumber.text);
+                              setState(() {});
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1466,7 +1535,10 @@ class _InvoicePageState extends State<InvoicePage> {
                           child: TextFormField(
                             controller: _ifsc,
                             decoration: deco('IFSC'),
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) {
+                              _saveField(_kIfsc, _ifsc.text);
+                              setState(() {});
+                            },
                           ),
                         ),
                       ],
@@ -1478,7 +1550,10 @@ class _InvoicePageState extends State<InvoicePage> {
                           child: TextFormField(
                             controller: _accountType,
                             decoration: deco('Account Type'),
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) {
+                              _saveField(_kAccountType, _accountType.text);
+                              setState(() {});
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1486,7 +1561,10 @@ class _InvoicePageState extends State<InvoicePage> {
                           child: TextFormField(
                             controller: _bank,
                             decoration: deco('Bank'),
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) {
+                              _saveField(_kBank, _bank.text);
+                              setState(() {});
+                            },
                           ),
                         ),
                       ],
@@ -1495,7 +1573,10 @@ class _InvoicePageState extends State<InvoicePage> {
                     TextFormField(
                       controller: _upiId,
                       decoration: deco('UPI ID'),
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) {
+                        _saveField(_kUpiId, _upiId.text);
+                        setState(() {});
+                      },
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -1532,7 +1613,10 @@ class _InvoicePageState extends State<InvoicePage> {
                         'Terms and Conditions (one per line)',
                       ).copyWith(hintText: 'e.g. Please pay within 15 days...'),
                       maxLines: 4,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) {
+                        _saveField(_kTerms, _terms.text);
+                        setState(() {});
+                      },
                     ),
                   ],
                 ),
