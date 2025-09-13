@@ -138,7 +138,7 @@ class _InvoicePageState extends State<InvoicePage> {
     pw.ImageProvider? upiQrImage;
     if (_upiId.text.trim().isNotEmpty) {
       final qrData =
-          'upi://pay?pa=${_upiId.text.trim()}&pn=${Uri.encodeComponent(_accountName.text.trim().isEmpty ? 'Payee' : _accountName.text.trim())}&am=${_amount.toStringAsFixed(2)}&cu=INR';
+          'upi://pay?pa=${_upiId.text.trim()}&pn=${Uri.encodeComponent(_accountName.text.trim().isEmpty ? 'Payee' : _accountName.text.trim())}&am=${_grandTotal.toStringAsFixed(2)}&cu=INR';
       try {
         upiQrImage = await _generateQrImage(qrData);
       } catch (_) {
@@ -829,7 +829,7 @@ class _InvoicePageState extends State<InvoicePage> {
   String _upiUri() {
     final pa = _upiId.text.trim();
     final pn = Uri.encodeComponent(_accountName.text.trim());
-    final am = _amount.toStringAsFixed(2);
+    final am = _grandTotal.toStringAsFixed(2);
     return 'upi://pay?pa=$pa&pn=$pn&am=$am&cu=INR&tn=${Uri.encodeComponent('Invoice ${_invoiceNo.text.trim()}')}';
   }
 
